@@ -133,6 +133,10 @@ func main() {
 	envelope.Net = &net
 
 	var newHardware VirtualHardware
+	newHardware.VHWSystem.VHWInstanceID = "0"
+	newHardware.VHWSystem.VHWSystemType = "vmx-11"
+	newHardware.VHWSystem.VHWSystemID = "Other Linux 3.x kernel 64-bit"
+	newHardware.VHWSystem.VHWSystemName = "Virtual Hardware Family"
 	addMemoryToVM(&newHardware, "2048")
 	addCPUtoVM(&newHardware, "4")
 
