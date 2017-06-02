@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"os"
+	"path"
 )
 
 // These define the Virtual Hardware types as per the OVF specifcation
@@ -124,14 +126,6 @@ func main() {
 
 	envelope.BuildID = "build123"
 
-	var newDiskSection DiskSection
-
-	appendFilesToReferences(&envelope, "Other_Linux_3.x_kernel_64-bit-disk1.vmdk", "file1", "100004")
-	appdendDiskToDiskSection(&newDiskSection, "8", "byte * 2^30", "file1", "vmdisk1", "http://format", "0")
-
-	newDiskSection.DiskInfo = "Awesome New Disk"
-	envelope.Disk = append(envelope.Disk, &newDiskSection)
-
 	var net NetSection
 	net.NetInfo = "List of Networks"
 	net.Network.NetName = "VM Network"
@@ -142,10 +136,13 @@ func main() {
 	addMemoryToVM(&newHardware, "2048")
 	addCPUtoVM(&newHardware, "4")
 
-	ideController := addIDEControllertoVM(&newHardware)
-	fmt.Printf("\nNew IDE controller is %d\n", ideController)
+	ideController := addIDEControllerToVM(&newHardware)
+	//	scsiController := addSCSIControllertoVM(&newHardware)
+
+	addCDToController(&newHardware, ideController, "./vcenter.iso")
 
 	envelope.VM.VHardware.Hardware = newHardware
+
 	output, err := xml.MarshalIndent(envelope, "  ", "    ")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -179,7 +176,7 @@ func addCPUtoVM(hardware *VirtualHardware, cpuCount string) {
 	hardware.VHWItem = append(hardware.VHWItem, cpuHardware)
 }
 
-func addIDEControllertoVM(hardware *VirtualHardware) (controllerID int) {
+func addIDEControllerToVM(hardware *VirtualHardware) (controllerID int) {
 	var controllerHardware VirtualHardwareItem
 	controllerHardware.VHWResourceType = HardwareIDE
 	controllerHardware.VHWAddress = "1"
@@ -193,6 +190,18 @@ func addIDEControllertoVM(hardware *VirtualHardware) (controllerID int) {
 }
 
 func addCDToController(hardware *VirtualHardware, controllerID int, cdFilePath string) {
+	fi, e := os.Stat(cdFilePath)
+	if e != nil {
+		os.Exit(1)
+	}
+
+	var newDiskSection DiskSection
+
+	appendFilesToReferences(&envelope, path.Base(cdFilePath), "file1", fmt.Sprintf("%d", fi.Size()))
+	appdendDiskToDiskSection(&newDiskSection, "8", "byte * 2^30", "file1", "vmdisk1", "http://format", "0")
+	newDiskSection.DiskInfo = "Awesome New Disk"
+	//envelope.Disk = append(envelope.Disk, &newDiskSection)
+
 	var cdHardware VirtualHardwareItem
 	cdHardware.VHWAddressOnParent = "0"
 	cdHardware.VHWAutomaticAllocation = "true"
@@ -202,6 +211,21 @@ func addCDToController(hardware *VirtualHardware, controllerID int, cdFilePath s
 	cdHardware.VHWHostResource = ""
 	cdHardware.VHWInstanceID = fmt.Sprintf("%d", len(hardware.VHWItem)+1)
 	hardware.VHWItem = append(hardware.VHWItem, cdHardware)
+}
+
+func addSCSIControllertoVM(hardware *VirtualHardware) (controllerID int) {
+	var controllerHardware VirtualHardwareItem
+	controllerHardware.VHWResourceType = HardwareSCSI
+	// Perhaps support more controller types in the future
+	controllerHardware.VHWResourceSubType = "lsilogic"
+	controllerHardware.VHWAddress = "0"
+	controllerHardware.VHWDescription = "SCSI Controller"
+	controllerHardware.VHWElementName = "scsiController0"
+	// This needs returning so other devices can be attached to it
+	controllerID = len(hardware.VHWItem) + 1
+	controllerHardware.VHWInstanceID = fmt.Sprintf("%d", controllerID)
+	hardware.VHWItem = append(hardware.VHWItem, controllerHardware)
+	return controllerID
 }
 
 func appendFilesToReferences(references *Envelope, ovfHref string, ovfID string, ovfSize string) {
