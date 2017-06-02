@@ -197,7 +197,7 @@ func addCDToController(hardware *VirtualHardware, controllerID int, cdFilePath s
 
 	var newDiskSection DiskSection
 
-	appendFilesToReferences(&envelope, path.Base(cdFilePath), "file1", fmt.Sprintf("%d", fi.Size()))
+	//appendFilesToReferences(&envelope, path.Base(cdFilePath), "file1", fmt.Sprintf("%d", fi.Size()))
 	appdendDiskToDiskSection(&newDiskSection, "8", "byte * 2^30", "file1", "vmdisk1", "http://format", "0")
 	newDiskSection.DiskInfo = "Awesome New Disk"
 	//envelope.Disk = append(envelope.Disk, &newDiskSection)
@@ -226,6 +226,20 @@ func addSCSIControllertoVM(hardware *VirtualHardware) (controllerID int) {
 	controllerHardware.VHWInstanceID = fmt.Sprintf("%d", controllerID)
 	hardware.VHWItem = append(hardware.VHWItem, controllerHardware)
 	return controllerID
+}
+
+func addNicToVM(hardware *VirtualHardware, networkName string) {
+	var networkHardware VirtualHardwareItem
+	networkHardware.VHWResourceType = HardwareNet
+	// Add support for VMXNET3 etc. in future
+	networkHardware.VHWResourceSubType = "E1000"
+	networkHardware.VHWAddressOnParent = "2"
+	networkHardware.VHWAutomaticAllocation = "true"
+	networkHardware.VHWConnection = networkName
+	networkHardware.VHWDescription = fmt.Sprintf("E1000 ethernet adapter on \"%s\"", networkName)
+	networkHardware.VHWElementName = "ethernet0"
+	networkHardware.VHWInstanceID = fmt.Sprintf("%d", len(hardware.VHWItem)+1)
+	hardware.VHWItem = append(hardware.VHWItem, networkHardware)
 }
 
 func appendFilesToReferences(references *Envelope, ovfHref string, ovfID string, ovfSize string) {
