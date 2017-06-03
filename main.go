@@ -65,7 +65,7 @@ func main() {
 	newHardware.VHWSystem.VHWSystemName = "Virtual Hardware Family"
 	addMemoryToVM(&newHardware, *mem)
 	addCPUtoVM(&newHardware, *cpus)
-
+	addNicToVM(&newHardware, *network)
 	ideController := addIDEControllerToVM(&newHardware)
 	//	scsiController := addSCSIControllertoVM(&newHardware)
 
@@ -75,7 +75,7 @@ func main() {
 	}
 
 	var newDiskSection DiskSection
-	addCDToController(&newHardware, ideController, isoPath)
+	addCDToController(&newHardware, ideController, "file1")
 	appendFilesToReferences(&envelope, path.Base(isoPath), "file1", fmt.Sprintf("%d", fi.Size()))
 
 	// ISOs dont go in the disk section OBVIOUSLY :'''(

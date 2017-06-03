@@ -78,12 +78,12 @@ type VirtualSystem struct {
 		VOSInfo string `xml:"Info"`
 		VOSDesc string `xml:"Description,omitempty"`
 	} `xml:"OperatingSystemSection"`
-	VHardware         VirtualHardware `xml:"VirtualHardwareSection"`
-	AnnotationSection struct {
-		AnnotationRequired string `xml:"ovf:required,attr,omitempty"`
-		AnnotationInfo     string `xml:"Info"`
-		AnnotationText     string `xml:"Annotation"`
-	} `xml:"AnnotationSection"`
+	VHardware VirtualHardware `xml:"VirtualHardwareSection"`
+	// AnnotationSection struct {
+	// 	AnnotationRequired string `xml:"ovf:required,attr,omitempty"`
+	// 	AnnotationInfo     string `xml:"Info"`
+	// 	AnnotationText     string `xml:"Annotation"`
+	// } `xml:"AnnotationSection,omitempty"`
 }
 
 // VirtualHardware : The overall struct that details the Virtual Machine
@@ -166,7 +166,7 @@ func addIDEControllerToVM(hardware *VirtualHardware) (controllerID int) {
 	return controllerID
 }
 
-func addCDToController(hardware *VirtualHardware, controllerID int, cdFilePath string) (ovfFileName string) {
+func addCDToController(hardware *VirtualHardware, controllerID int, ovfFileID string) {
 
 	var cdHardware VirtualHardwareItem
 	cdHardware.VHWResourceType = HardwareCDROM
@@ -176,10 +176,9 @@ func addCDToController(hardware *VirtualHardware, controllerID int, cdFilePath s
 	// File needs adding to references and disksection
 	// Should become something like file1
 	cdHardware.VHWParent = fmt.Sprintf("%d", controllerID)
-	cdHardware.VHWHostResource = "ovf:/file/file1"
+	cdHardware.VHWHostResource = fmt.Sprintf("ovf:/file/%s", ovfFileID)
 	cdHardware.VHWInstanceID = fmt.Sprintf("%d", len(hardware.VHWItem)+1)
 	hardware.VHWItem = append(hardware.VHWItem, cdHardware)
-	return ""
 }
 
 func addSCSIControllertoVM(hardware *VirtualHardware) (controllerID int) {
@@ -205,7 +204,7 @@ func addNicToVM(hardware *VirtualHardware, networkName string) {
 	networkHardware.VHWAddressOnParent = "2"
 	networkHardware.VHWAutomaticAllocation = "true"
 	networkHardware.VHWConnection = networkName
-	networkHardware.VHWDescription = fmt.Sprintf("E1000 ethernet adapter on \"%s\"", networkName)
+	networkHardware.VHWDescription = fmt.Sprintf("E1000 ethernet adapter on %s", networkName)
 	networkHardware.VHWElementName = "ethernet0"
 	networkHardware.VHWInstanceID = fmt.Sprintf("%d", len(hardware.VHWItem)+1)
 	hardware.VHWItem = append(hardware.VHWItem, networkHardware)
