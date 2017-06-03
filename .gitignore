@@ -1,2 +1,3 @@
-vcenter.iso
 gova
+*.iso
+*.ovf

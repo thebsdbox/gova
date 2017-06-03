@@ -76,11 +76,9 @@ type VirtualSystem struct {
 		VOSID   string `xml:"ovf:id,attr"`
 		VOSType string `xml:"ovf:osType,attr"`
 		VOSInfo string `xml:"Info"`
-		VOSDesc string `xml:"Description"`
+		VOSDesc string `xml:"Description,omitempty"`
 	} `xml:"OperatingSystemSection"`
-	VHardware struct {
-		Hardware VirtualHardware
-	} `xml:"VirtualHardwareSection"`
+	VHardware         VirtualHardware `xml:"VirtualHardwareSection"`
 	AnnotationSection struct {
 		AnnotationRequired string `xml:"ovf:required,attr,omitempty"`
 		AnnotationInfo     string `xml:"Info"`
@@ -116,6 +114,19 @@ type VirtualHardwareItem struct {
 	VHWResourceType        string `xml:"rasd:ResourceType,omitempty"`
 	VHWResourceSubType     string `xml:"rasd:ResourceSubType,omitempty"`
 	VHWVirtualQuantity     string `xml:"rasd:VirtualQuantity,omitempty"`
+}
+
+func newDMTFEnvelope() Envelope {
+	var envelope Envelope
+	envelope.BuildID = "linuxkitOVF"
+	envelope.XMLNS = "http://schemas.dmtf.org/ovf/envelope/1"
+	envelope.CIM = "http://schemas.dmtf.org/wbem/wscim/1/common"
+	envelope.OVF = "http://schemas.dmtf.org/ovf/envelope/1"
+	envelope.RASD = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData"
+	envelope.VMW = "http://www.vmware.com/schema/ovf"
+	envelope.VSSD = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData"
+	envelope.XSI = "http://www.w3.org/2001/XMLSchema-instance"
+	return envelope
 }
 
 func addMemoryToVM(hardware *VirtualHardware, memorySize string) {
@@ -165,7 +176,7 @@ func addCDToController(hardware *VirtualHardware, controllerID int, cdFilePath s
 	// File needs adding to references and disksection
 	// Should become something like file1
 	cdHardware.VHWParent = fmt.Sprintf("%d", controllerID)
-	cdHardware.VHWHostResource = "file1"
+	cdHardware.VHWHostResource = "ovf:/file/file1"
 	cdHardware.VHWInstanceID = fmt.Sprintf("%d", len(hardware.VHWItem)+1)
 	hardware.VHWItem = append(hardware.VHWItem, cdHardware)
 	return ""
