@@ -101,18 +101,18 @@ type VirtualHardware struct {
 // VirtualHardwareItem : The overall struct that details the Virtual Machine
 type VirtualHardwareItem struct {
 	VHWRequired            string `xml:"ovf:required,attr,omitempty"`
-	VHWAllocationUnits     string `xml:"rasd:AllocationUnits,omitempty"`
-	VHWAutomaticAllocation string `xml:"rasd:AutomaticAllocation,omitempty"`
 	VHWAddress             string `xml:"rasd:Address,omitempty"`
 	VHWAddressOnParent     string `xml:"rasd:AddressOnParent,omitempty"`
+	VHWAllocationUnits     string `xml:"rasd:AllocationUnits,omitempty"`
+	VHWAutomaticAllocation string `xml:"rasd:AutomaticAllocation,omitempty"`
 	VHWConnection          string `xml:"rasd:Connection,omitempty"`
 	VHWDescription         string `xml:"rasd:Description,omitempty"`
 	VHWElementName         string `xml:"rasd:ElementName,omitempty"`
 	VHWHostResource        string `xml:"rasd:HostResource,omitempty"`
 	VHWInstanceID          string `xml:"rasd:InstanceID,omitempty"`
 	VHWParent              string `xml:"rasd:Parent,omitempty"`
-	VHWResourceType        string `xml:"rasd:ResourceType,omitempty"`
 	VHWResourceSubType     string `xml:"rasd:ResourceSubType,omitempty"`
+	VHWResourceType        string `xml:"rasd:ResourceType,omitempty"`
 	VHWVirtualQuantity     string `xml:"rasd:VirtualQuantity,omitempty"`
 }
 
