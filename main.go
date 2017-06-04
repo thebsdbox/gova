@@ -1,9 +1,11 @@
 package main
 
 import (
+	"archive/tar"
 	"encoding/xml"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,8 +14,55 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func main() {
+func createOVA(files []string, ovaName string) {
 
+	ovaFile, err := os.Create(ovaName + ".ova")
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	// Create a new tar archive.
+	tw := tar.NewWriter(ovaFile)
+
+	// Add some files to the archive.
+	for _, filePath := range files {
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+		defer file.Close()
+		if stat, err := file.Stat(); err == nil {
+			// now lets create the header as needed for this file within the tarball
+			header := new(tar.Header)
+			header.Name = filePath
+			header.Size = stat.Size()
+			header.Mode = int64(stat.Mode())
+			header.ModTime = stat.ModTime()
+			// write the header to the tarball archive
+			if err := tw.WriteHeader(header); err != nil {
+				log.Fatalf("%v", err)
+			}
+			// copy the file data to the tarball
+			if _, err := io.Copy(tw, file); err != nil {
+				log.Fatalf("%v", err)
+			}
+		}
+	}
+}
+
+func writeOVF(ovfFileName string, ovfContent string) {
+	ovaFile, err := os.Create(ovfFileName + ".ovf")
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	_, err = ovaFile.WriteString(ovfContent)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	ovaFile.Sync()
+}
+
+func main() {
 	invoked := filepath.Base(os.Args[0])
 
 	network := flag.String("network", "", "The network label the VM will use")
@@ -44,6 +93,7 @@ func main() {
 	}
 
 	envelope := newDMTFEnvelope()
+	vmName := strings.TrimSuffix(path.Base(isoPath), ".iso")
 
 	var net NetSection
 	net.NetInfo = "List of Networks"
@@ -54,14 +104,14 @@ func main() {
 	var newHardware VirtualHardware
 	envelope.VM.VInfo = "A Virtual Machine"
 	envelope.VM.VID = "vm"
-	envelope.VM.VName = strings.TrimSuffix(path.Base(isoPath), ".iso")
+	envelope.VM.VName = vmName
 	envelope.VM.VOSSection.VOSID = "1"
 	envelope.VM.VOSSection.VOSType = "*other3xLinux64Guest"
 	envelope.VM.VOSSection.VOSInfo = "The kind of installed guest operating system"
 	newHardware.VHWInfo = "Virtual hardware requirements"
 	newHardware.VHWSystem.VHWInstanceID = "0"
 	newHardware.VHWSystem.VHWSystemType = "vmx-11"
-	newHardware.VHWSystem.VHWSystemID = strings.TrimSuffix(path.Base(isoPath), ".iso")
+	newHardware.VHWSystem.VHWSystemID = vmName
 	newHardware.VHWSystem.VHWSystemName = "Virtual Hardware Family"
 	addMemoryToVM(&newHardware, *mem)
 	addCPUtoVM(&newHardware, *cpus)
@@ -92,5 +142,7 @@ func main() {
 	}
 	var xmlOutput string
 	xmlOutput = xml.Header + string(output)
-	fmt.Println(xmlOutput)
+
+	writeOVF(vmName, xmlOutput)
+	createOVA([]string{vmName + ".ovf", isoPath}, vmName)
 }
